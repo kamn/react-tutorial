@@ -2,7 +2,8 @@
     (:require-macros [reagent.ratom :refer [reaction]])
     (:require [reagent.core :as reagent]
               [re-frame.core :as re-frame]
-              [react-re-frame.config :as config]))
+              [react-re-frame.config :as config]
+              [ajax.core :refer [GET POST]]))
 
 (when config/debug?
   (println "dev mode"))
