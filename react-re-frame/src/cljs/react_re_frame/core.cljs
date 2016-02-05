@@ -17,12 +17,12 @@
   {:name "re-frame"
    :comments [
               {:author "Aaaa"
-               :comment "This is a test"}
+               :text "This is a test"}
               {:author "Bbbb"
-               :comment "This is another test"}]
+               :text "This is another test"}]
    :new-comment {
                  :author ""
-                 :comment ""}})
+                 :text ""}})
 
 
 
@@ -34,7 +34,15 @@
  (fn  [_ _]
    default-db))
 
+(register-handler
+ :new-com-author
+ (fn  [db [_ val]]
+   (assoc-in db [:new-comment :author] val)))
 
+(register-handler
+ :new-com-text
+ (fn  [db [_ val]]
+   (assoc-in db [:new-comment :text] val)))
 
 (register-handler
  :load-comments
@@ -83,7 +91,7 @@
 (defn comment-cmp [data]
     [:div.comment
       [:h2.commentAuthor (:author data)]
-      [:span (:comment data)]])
+      [:span (:text data)]])
 
 (defn comment-list [comments]
     [:div.commentList
@@ -94,12 +102,12 @@
     [:form.commentForm {:on-submit #(dispatch-sync [:submit-comment %])}
       [:input {:type "text"
                :placeholder "Your Name"
-               :value (:author new-comment)
-               :on-change #()}]
+               :value (:author @new-comment)
+               :on-change #(dispatch [:new-com-author (.-target.value %)])}]
       [:input {:type "text"
                :placeholder "Say something..."
-               :value (:text new-comment)
-               :on-change #()}]
+               :value (:text @new-comment)
+               :on-change #(dispatch [:new-com-text (.-target.value %)])}]
       [:input {:type "submit"
                :value "Post"}]]))
 
@@ -111,7 +119,7 @@
       [:div.commentBox
         [:h1 "Comments"]
         [comment-list @comments]
-        [comment-form @new-comment]])))
+        [comment-form new-comment]])))
 
 (defn mount-root []
   (reagent/render [comment-box]
