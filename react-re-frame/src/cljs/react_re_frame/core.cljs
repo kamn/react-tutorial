@@ -1,7 +1,8 @@
 (ns react-re-frame.core
     (:require-macros [reagent.ratom :refer [reaction]])
     (:require [reagent.core :as reagent]
-              [re-frame.core :as re-frame]
+              [re-frame.core :as re-frame :refer [register-sub register-handler
+                                                  subscribe dispatch dispatch-sync]]
               [react-re-frame.config :as config]
               [ajax.core :refer [GET POST]]))
 
@@ -28,25 +29,50 @@
 ;; ===
 ;; Handlers
 ;; ===
-(re-frame/register-handler
+(register-handler
  :initialize-db
  (fn  [_ _]
    default-db))
 
+
+
+(register-handler
+ :load-comments
+ (fn  [db _]
+   (GET "/api/comments"
+      {:response-format :json
+       :handler #(js/console.log "Success")
+       :error-handler #(js/console.log "Error")})))
+
+(register-handler
+ :submit-comment
+ (fn  [db [_ e]]
+   ;;TODO: Prevent default
+   (.preventDefault e)
+   ;;TODO: Get the comment data
+   (POST "/api/comments"
+      {:params {"id" (js/Date.now)
+                "author" ""
+                "text" ""}
+       :response-format :json
+       :handler #(js/console.log "Success")
+       :error-handler #(js/console.log "Error")})
+   db))
+
 ;; ===
 ;; Subs
 ;; ===
-(re-frame/register-sub
+(register-sub
  :name
  (fn [db]
    (reaction (:name @db))))
 
-(re-frame/register-sub
+(register-sub
  :comments
  (fn [db]
    (reaction (:comments @db))))
 
-(re-frame/register-sub
+(register-sub
  :new-comment
  (fn [db]
    (reaction (:new-comment @db))))
@@ -65,7 +91,7 @@
 
 (defn comment-form [new-comment]
   (fn []
-    [:form.commentForm
+    [:form.commentForm {:on-submit #(dispatch-sync [:submit-comment %])}
       [:input {:type "text"
                :placeholder "Your Name"
                :value (:author new-comment)
@@ -75,12 +101,12 @@
                :value (:text new-comment)
                :on-change #()}]
       [:input {:type "submit"
-               :value "post"}]]))
+               :value "Post"}]]))
 
 
 (defn comment-box []
-  (let [comments (re-frame/subscribe [:comments])
-        new-comment (re-frame/subscribe [:new-comment])]
+  (let [comments (subscribe [:comments])
+        new-comment (subscribe [:new-comment])]
     (fn []
       [:div.commentBox
         [:h1 "Comments"]
@@ -92,5 +118,5 @@
                   (.getElementById js/document "app")))
 
 (defn ^:export init [] 
-  (re-frame/dispatch-sync [:initialize-db])
+  (dispatch-sync [:initialize-db])
   (mount-root))
