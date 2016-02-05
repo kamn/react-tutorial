@@ -9,12 +9,9 @@
 (when config/debug?
   (println "dev mode"))
 
-;; ===
-;; Data
-;; ===
+;; -- Data --------------------------------------------------------------------
 (def default-db
-  {:name "re-frame"
-   :comments [
+  {:comments [
               {:author "Aaaa"
                :text "This is a test"}
               {:author "Bbbb"
@@ -23,9 +20,7 @@
                  :author ""
                  :text ""}})
 
-;; ===
-;; Handlers
-;; ===
+;; -- Event Handlers ----------------------------------------------------------
 (register-handler
  :initialize-db
  (fn  [_ _]
@@ -80,9 +75,7 @@
    (println val)
    db))
 
-;; ===
-;; Subs
-;; ===
+;; -- Subscription Handlers ---------------------------------------------------
 (register-sub
  :name
  (fn [db]
@@ -98,9 +91,7 @@
  (fn [db]
    (reaction (:new-comment @db))))
 
-;; ===
-;; Views
-;; ===
+;; -- View Components ---------------------------------------------------------
 (defn comment-cmp [data]
     [:div.comment
       [:h2.commentAuthor (:author data)]
@@ -124,7 +115,6 @@
       [:input {:type "submit"
                :value "Post"}]]))
 
-
 (defn comment-box []
   (let [comments (subscribe [:comments])
         new-comment (subscribe [:new-comment])]
@@ -138,6 +128,7 @@
   (reagent/render [comment-box]
                   (.getElementById js/document "app")))
 
+;; -- Entry Point -------------------------------------------------------------
 (defn ^:export init [] 
   (dispatch-sync [:initialize-db])
   (mount-root))
