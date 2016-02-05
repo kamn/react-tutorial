@@ -12,7 +12,6 @@
 ;; ===
 ;; Data
 ;; ===
-
 (def default-db
   {:name "re-frame"
    :comments [
@@ -23,8 +22,6 @@
    :new-comment {
                  :author ""
                  :text ""}})
-
-
 
 ;; ===
 ;; Handlers
@@ -49,22 +46,38 @@
  (fn  [db _]
    (GET "/api/comments"
       {:response-format :json
-       :handler #(js/console.log "Success")
+       :handler #(dispatch [:load-comments-success %])
        :error-handler #(js/console.log "Error")})))
+
+(register-handler
+ :load-comments-success
+ (fn  [db [_ val]]
+   (println val)
+   db))
 
 (register-handler
  :submit-comment
  (fn  [db [_ e]]
-   ;;TODO: Prevent default
    (.preventDefault e)
    ;;TODO: Get the comment data
    (POST "/api/comments"
       {:params {"id" (js/Date.now)
-                "author" ""
-                "text" ""}
+                "author" (get-in db [:new-comment :author])
+                "text" (get-in db [:new-comment :author])}
        :response-format :json
-       :handler #(js/console.log "Success")
-       :error-handler #(js/console.log "Error")})
+       :format :json
+       :handler #(dispatch [:submit-comments-success %])
+       ;;TODO - Copy example error logs
+       :error-handler #(js/console.error "Error")})
+   (-> db
+       (update :comments #(conj % (:new-comment db)))
+       (assoc :new-comment {:author "" :text ""}))))
+    
+
+(register-handler
+ :submit-comments-success
+ (fn  [db [_ val]]
+   (println val)
    db))
 
 ;; ===
