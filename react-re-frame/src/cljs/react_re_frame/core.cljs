@@ -11,19 +11,15 @@
 
 ;; -- Data --------------------------------------------------------------------
 (def default-db
-  {:comments [
-              {:author "Aaaa"
-               :text "This is a test"}
-              {:author "Bbbb"
-               :text "This is another test"}]
-   :new-comment {
-                 :author ""
+  {:comments []
+   :new-comment {:author ""
                  :text ""}})
 
 ;; -- Event Handlers ----------------------------------------------------------
 (register-handler
  :initialize-db
  (fn  [_ _]
+   (dispatch [:load-comments])
    (js/setInterval #(dispatch [:load-comments]) 2000)
    default-db))
 
@@ -42,6 +38,7 @@
  (fn  [db _]
    (GET "/api/comments"
       {:response-format :json
+       :keywords? true
        :handler #(dispatch [:load-comments-success %])
        :error-handler #(js/console.error "/api/comments" (:status %) (:status-text %))})
    db))
@@ -49,23 +46,20 @@
 (register-handler
  :load-comments-success
  (fn  [db [_ val]]
-   (println val)
-   db))
+   (assoc db :comments val)))
 
 (register-handler
  :submit-comment
  (fn  [db [_ e]]
    (.preventDefault e)
-   ;;TODO: Get the comment data
    (POST "/api/comments"
       {:params {"id" (js/Date.now)
                 "author" (get-in db [:new-comment :author])
                 "text" (get-in db [:new-comment :author])}
        :response-format :json
-       :format :json
+       :format :raw
        :handler #(dispatch [:submit-comments-success %])
-       ;;TODO - Copy example error logs
-       :error-handler #(js/console.error "Error")})
+       :error-handler #(js/console.error "/api/comments" (:status %) (:status-text %))})
    (-> db
        (update :comments #(conj % (:new-comment db)))
        (assoc :new-comment {:author "" :text ""}))))
@@ -74,8 +68,7 @@
 (register-handler
  :submit-comments-success
  (fn  [db [_ val]]
-   (println val)
-   db))
+   (assoc db :comments val)))
 
 ;; -- Subscription Handlers ---------------------------------------------------
 (register-sub
@@ -95,9 +88,11 @@
 
 ;; -- View Components ---------------------------------------------------------
 (defn comment-cmp [data]
-    [:div.comment
+    [:div.comment {:key (:id data)}
       [:h2.commentAuthor (:author data)]
-      [:span (:text data)]])
+      [:span {:dangerouslySetInnerHTML 
+               {:__html (js/marked (:text data) 
+                                   (js-obj {"sanitize" true}))}}]])
 
 (defn comment-list [comments]
     [:div.commentList
