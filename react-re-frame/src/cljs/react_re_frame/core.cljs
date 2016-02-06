@@ -24,6 +24,7 @@
 (register-handler
  :initialize-db
  (fn  [_ _]
+   (js/setInterval #(dispatch [:load-comments]) 2000)
    default-db))
 
 (register-handler
@@ -42,7 +43,8 @@
    (GET "/api/comments"
       {:response-format :json
        :handler #(dispatch [:load-comments-success %])
-       :error-handler #(js/console.log "Error")})))
+       :error-handler #(js/console.error "/api/comments" (:status %) (:status-text %))})
+   db))
 
 (register-handler
  :load-comments-success
